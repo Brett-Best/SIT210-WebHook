@@ -1,0 +1,1 @@
+#include "../idDHT22.h"
