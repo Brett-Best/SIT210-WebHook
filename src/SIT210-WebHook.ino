@@ -5,10 +5,11 @@
  */
 
 #include "../lib/idDHT22/src/idDHT22/idDHT22.h"
+#include <Particle.h>
 
 int idDHT22pin = D4;
 void dht22_wrapper();
-void handleDHTResult(int result);
+bool handleDHTResult(int result);
 
 idDHT22 DHT22(idDHT22pin, dht22_wrapper);
 
@@ -28,28 +29,30 @@ void loop()
   Serial.print("Read sensor: ");
 
   DHT22.acquire();
-  while (DHT22.acquiring())
-    ;
+  while (DHT22.acquiring());
 
   int result = DHT22.getStatus();
-  handleDHTResult(result);
+  if (false == handleDHTResult(result))
+  {
+    delay(2000);
+    return;
+  }
 
-  Serial.print("Humidity (%): ");
-  Serial.println(DHT22.getHumidity(), 2);
-
-  Serial.print("Temperature (oC): ");
-  Serial.println(DHT22.getCelsius(), 2);
+  Serial.print("Temperature (C): ");
+  float temperature =  DHT22.getCelsius();
+  Serial.println(temperature, 2);
+  Particle.publish("Temperature (C)", String(temperature), PRIVATE);
 
   delay(2000);
 }
 
-void handleDHTResult(int result)
+bool handleDHTResult(int result)
 {
   switch (result)
   {
   case IDDHTLIB_OK:
     Serial.println("OK");
-    break;
+    return true;
   case IDDHTLIB_ERROR_CHECKSUM:
     Serial.println("Error\n\r\tChecksum error");
     break;
@@ -75,4 +78,6 @@ void handleDHTResult(int result)
     Serial.println("Unknown error");
     break;
   }
+
+  return false;
 }
